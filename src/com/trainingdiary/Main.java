@@ -7,6 +7,7 @@ import com.trainingdiary.models.Note;
 import com.trainingdiary.services.AuthService;
 import com.trainingdiary.services.TrainingService;
 import com.trainingdiary.services.NoteService;
+import com.trainingdiary.services.AnalyticsService;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -17,6 +18,7 @@ public class Main {
     private static TrainingService trainingService = new TrainingService();
     private static NoteService noteService = new NoteService();
     private static Scanner scanner = new Scanner(System.in);
+    private static AnalyticsService analyticsService = new AnalyticsService();
 
     public static void main(String[] args) {
         System.out.println("=== ДНЕВНИК ТРЕНИРОВОК ===");
@@ -56,10 +58,20 @@ public class Main {
         System.out.println("1. Мои тренировки");
         System.out.println("2. Добавить тренировку");
         System.out.println("3. Удалить тренировку");
-        System.out.println("4. Добавить комментарий к тренировке");
-        System.out.println("5. Мои заметки");
-        System.out.println("6. Добавить заметку");
-        System.out.println("7. Выйти из аккаунта");
+        System.out.println("4. Редактировать тренировку");
+        System.out.println("5. Поиск тренировок по дате");
+        System.out.println("6. Поиск тренировок по упражнению");
+        System.out.println("7. Добавить упражнение к тренировке");
+        System.out.println("8. Редактировать упражнение");
+        System.out.println("9. Добавить комментарий к тренировке");
+        System.out.println("10. Мои заметки");
+        System.out.println("11. Добавить заметку");
+        System.out.println("12. Редактировать заметку");
+        System.out.println("13. Удалить заметку");
+        System.out.println("14. Статистика тренировок");
+        System.out.println("15. Прогресс по весам");
+        System.out.println("16. Прогресс по повторениям");
+        System.out.println("17. Выйти из аккаунта");
         System.out.print("Выберите действие: ");
 
         int choice = scanner.nextInt();
@@ -69,10 +81,20 @@ public class Main {
             case 1 -> showTrainings();
             case 2 -> addTraining();
             case 3 -> deleteTraining();
-            case 4 -> addCommentToTraining();
-            case 5 -> showNotes();
-            case 6 -> addNote();
-            case 7 -> authService.logout();
+            case 4 -> editTraining();
+            case 5 -> searchTrainingsByDate();
+            case 6 -> searchTrainingsByExercise();
+            case 7 -> addExerciseToTraining();
+            case 8 -> editExercise();
+            case 9 -> addCommentToTraining();
+            case 10 -> showNotes();
+            case 11 -> addNote();
+            case 12 -> editNote();
+            case 13 -> deleteNote();
+            case 14 -> showStatistics();
+            case 15 -> showWeightProgress();
+            case 16 -> showRepsProgress();
+            case 17 -> authService.logout();
             default -> System.out.println("Неверный выбор!");
         }
     }
@@ -117,14 +139,12 @@ public class Main {
             Training training = trainings.get(i);
             System.out.println((i + 1) + ". " + training.getDate() + " - " + training.getType());
 
-            // Показываем комментарий если есть
             if (training.getComment() != null && !training.getComment().isEmpty()) {
                 System.out.println("   Комментарий: " + training.getComment());
             }
 
             System.out.println("   Упражнений: " + training.getExercises().size());
 
-            // Показываем упражнения
             for (Exercise exercise : training.getExercises()) {
                 System.out.println("   - " + exercise.getName() + ": " +
                         exercise.getReps() + " повт. × " + exercise.getWeight() + " кг");
@@ -143,7 +163,6 @@ public class Main {
 
         Training training = new Training(date, type);
 
-        // Добавление упражнений
         while (true) {
             System.out.print("Добавить упражнение? (да/нет): ");
             String answer = scanner.nextLine();
@@ -188,7 +207,6 @@ public class Main {
         }
     }
 
-    // ДОБАВИЛ: Добавление комментария к тренировке
     private static void addCommentToTraining() {
         User currentUser = authService.getCurrentUser();
         List<Training> trainings = trainingService.getUserTrainings(currentUser);
@@ -215,7 +233,6 @@ public class Main {
         }
     }
 
-    // ДОБАВИЛ: Просмотр заметок
     private static void showNotes() {
         User currentUser = authService.getCurrentUser();
         List<Note> notes = noteService.getUserNotes(currentUser);
@@ -232,12 +249,173 @@ public class Main {
         }
     }
 
-    // ДОБАВИЛ: Добавление заметки
     private static void addNote() {
         System.out.print("Введите текст заметки: ");
         String text = scanner.nextLine();
 
         noteService.addNote(authService.getCurrentUser(), text);
         System.out.println("Заметка добавлена!");
+    }
+
+    private static void editTraining() {
+        User currentUser = authService.getCurrentUser();
+        List<Training> trainings = trainingService.getUserTrainings(currentUser);
+
+        if (trainings.isEmpty()) {
+            System.out.println("Нет тренировок для редактирования.");
+            return;
+        }
+
+        showTrainings();
+        System.out.print("Введите номер тренировки для редактирования: ");
+        int index = scanner.nextInt() - 1;
+        scanner.nextLine();
+
+        if (index >= 0 && index < trainings.size()) {
+            System.out.print("Введите новую дату (гггг-мм-дд): ");
+            LocalDate newDate = LocalDate.parse(scanner.nextLine());
+            System.out.print("Введите новый тип тренировки: ");
+            String newType = scanner.nextLine();
+
+            trainingService.updateTraining(currentUser, index, newDate, newType);
+            System.out.println("Тренировка обновлена!");
+        } else {
+            System.out.println("Неверный номер тренировки!");
+        }
+    }
+
+    private static void searchTrainingsByDate() {
+        System.out.print("Введите дату для поиска (гггг-мм-дд): ");
+        LocalDate searchDate = LocalDate.parse(scanner.nextLine());
+
+        List<Training> foundTrainings = trainingService.findTrainingsByDate(authService.getCurrentUser(), searchDate);
+
+        if (foundTrainings.isEmpty()) {
+            System.out.println("Тренировок на эту дату не найдено.");
+            return;
+        }
+
+        System.out.println("\n=== НАЙДЕННЫЕ ТРЕНИРОВКИ ===");
+        for (int i = 0; i < foundTrainings.size(); i++) {
+            Training training = foundTrainings.get(i);
+            System.out.println((i + 1) + ". " + training.getDate() + " - " + training.getType());
+        }
+    }
+
+    private static void searchTrainingsByExercise() {
+        System.out.print("Введите название упражнения для поиска: ");
+        String exerciseName = scanner.nextLine();
+
+        List<Training> foundTrainings = trainingService.findTrainingsByExercise(authService.getCurrentUser(), exerciseName);
+
+        if (foundTrainings.isEmpty()) {
+            System.out.println("Тренировок с этим упражнением не найдено.");
+            return;
+        }
+
+        System.out.println("\n=== НАЙДЕННЫЕ ТРЕНИРОВКИ ===");
+        for (int i = 0; i < foundTrainings.size(); i++) {
+            Training training = foundTrainings.get(i);
+            System.out.println((i + 1) + ". " + training.getDate() + " - " + training.getType());
+        }
+    }
+
+    private static void addExerciseToTraining() {
+        User currentUser = authService.getCurrentUser();
+        List<Training> trainings = trainingService.getUserTrainings(currentUser);
+
+        if (trainings.isEmpty()) {
+            System.out.println("Нет тренировок для добавления упражнения.");
+            return;
+        }
+
+        showTrainings();
+        System.out.print("Введите номер тренировки: ");
+        int trainingIndex = scanner.nextInt() - 1;
+        scanner.nextLine();
+
+        if (trainingIndex >= 0 && trainingIndex < trainings.size()) {
+            System.out.print("Название упражнения: ");
+            String name = scanner.nextLine();
+            System.out.print("Количество повторений: ");
+            int reps = scanner.nextInt();
+            System.out.print("Вес (кг): ");
+            double weight = scanner.nextDouble();
+            scanner.nextLine();
+
+            Exercise exercise = new Exercise(name, reps, weight);
+            trainingService.addExerciseToTraining(currentUser, trainingIndex, exercise);
+            System.out.println("Упражнение добавлено!");
+        } else {
+            System.out.println("Неверный номер тренировки!");
+        }
+    }
+
+    private static void editExercise() {
+        System.out.println("Функция редактирования упражнения - в разработке");
+    }
+
+    private static void editNote() {
+        User currentUser = authService.getCurrentUser();
+        List<Note> notes = noteService.getUserNotes(currentUser);
+
+        if (notes.isEmpty()) {
+            System.out.println("Нет заметок для редактирования.");
+            return;
+        }
+
+        showNotes();
+        System.out.print("Введите номер заметки для редактирования: ");
+        int index = scanner.nextInt() - 1;
+        scanner.nextLine();
+
+        if (index >= 0 && index < notes.size()) {
+            System.out.print("Введите новый текст заметки: ");
+            String newText = scanner.nextLine();
+            noteService.updateNote(currentUser, index, newText);
+            System.out.println("Заметка обновлена!");
+        } else {
+            System.out.println("Неверный номер заметки!");
+        }
+    }
+
+    private static void deleteNote() {
+        User currentUser = authService.getCurrentUser();
+        List<Note> notes = noteService.getUserNotes(currentUser);
+
+        if (notes.isEmpty()) {
+            System.out.println("Нет заметок для удаления.");
+            return;
+        }
+
+        showNotes();
+        System.out.print("Введите номер заметки для удаления: ");
+        int index = scanner.nextInt() - 1;
+        scanner.nextLine();
+
+        if (index >= 0 && index < notes.size()) {
+            noteService.deleteNote(currentUser, index);
+            System.out.println("Заметка удалена!");
+        } else {
+            System.out.println("Неверный номер заметки!");
+        }
+    }
+
+    private static void showStatistics() {
+        User currentUser = authService.getCurrentUser();
+        int totalTrainings = analyticsService.getTotalTrainingsCount(currentUser);
+        System.out.println("Общее количество тренировок: " + totalTrainings);
+    }
+
+    private static void showWeightProgress() {
+        System.out.print("Введите название упражнения: ");
+        String exerciseName = scanner.nextLine();
+        analyticsService.showWeightProgress(authService.getCurrentUser(), exerciseName);
+    }
+
+    private static void showRepsProgress() {
+        System.out.print("Введите название упражнения: ");
+        String exerciseName = scanner.nextLine();
+        analyticsService.showRepsProgress(authService.getCurrentUser(), exerciseName);
     }
 }
