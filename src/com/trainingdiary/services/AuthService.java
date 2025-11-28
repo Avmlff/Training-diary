@@ -30,7 +30,15 @@ public class AuthService {
         return false;
     }
 
+    public void logout() {
+        currentUser = null;
+    }
+
     public User getCurrentUser() {
         return currentUser;
+    }
+
+    public boolean isLoggedIn() {
+        return currentUser != null;
     }
 }

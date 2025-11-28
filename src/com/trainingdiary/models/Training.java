@@ -8,6 +8,7 @@ public class Training {
     private LocalDate date;
     private String type;
     private List<Exercise> exercises;
+    private String comment; // ДОБАВИЛ
 
     public Training(LocalDate date, String type) {
         this.date = date;
@@ -25,5 +26,18 @@ public class Training {
 
     public List<Exercise> getExercises() {
         return exercises;
+    }
+
+    public void addExercise(Exercise exercise) {
+        exercises.add(exercise);
+    }
+
+    // ДОБАВИЛ методы для комментариев
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
     }
 }
