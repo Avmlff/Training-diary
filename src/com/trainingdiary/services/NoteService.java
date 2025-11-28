@@ -15,4 +15,17 @@ public class NoteService {
     public List<Note> getUserNotes(User user) {
         return user.getNotes();
     }
+
+    public void updateNote(User user, int index, String newText) {
+        if (index >= 0 && index < user.getNotes().size()) {
+            Note note = user.getNotes().get(index);
+            note.setText(newText);
+        }
+    }
+
+    public void deleteNote(User user, int index) {
+        if (index >= 0 && index < user.getNotes().size()) {
+            user.getNotes().remove(index);
+        }
+    }
 }

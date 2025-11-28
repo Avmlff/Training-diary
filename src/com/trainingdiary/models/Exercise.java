@@ -15,11 +15,23 @@ public class Exercise {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public int getReps() {
         return reps;
     }
 
+    public void setReps(int reps) {
+        this.reps = reps;
+    }
+
     public double getWeight() {
         return weight;
+    }
+
+    public void setWeight(double weight) {
+        this.weight = weight;
     }
 }
