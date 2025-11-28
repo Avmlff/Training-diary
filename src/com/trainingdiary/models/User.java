@@ -38,7 +38,6 @@ public class User {
         }
     }
 
-    // ДОБАВИЛ методы для заметок
     public List<Note> getNotes() {
         return notes;
     }
