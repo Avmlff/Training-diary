@@ -2,6 +2,7 @@ package com.trainingdiary.services;
 
 import com.trainingdiary.models.User;
 import com.trainingdiary.models.Training;
+import com.trainingdiary.models.Note; // ВАЖНО: добавлен импорт
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,11 +32,13 @@ public class TrainerService {
     }
 
     public void addRecommendation(User trainer, User client, String recommendationText) {
-        String recommendation = "Рекомендация от тренера " + trainer.getLogin() +
+        String fullText = "Рекомендация от тренера " + trainer.getLogin() +
                 ": " + recommendationText;
-        client.addNote(new com.trainingdiary.models.Note(
+        Note recommendation = new Note(
                 java.time.LocalDate.now(),
-                recommendation
-        ));
+                fullText,
+                "TRAINER_RECOMMENDATION"
+        );
+        client.addNote(recommendation);
     }
 }

@@ -1,11 +1,13 @@
 package com.trainingdiary.models;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Training {
     private LocalDate date;
+    private LocalTime time;
     private String type;
     private List<Exercise> exercises;
     private String comment;
@@ -14,10 +16,26 @@ public class Training {
         this.date = date;
         this.type = type;
         this.exercises = new ArrayList<>();
+        this.time = LocalTime.of(10, 0);
+    }
+
+    public Training(LocalDate date, LocalTime time, String type) {
+        this.date = date;
+        this.time = time;
+        this.type = type;
+        this.exercises = new ArrayList<>();
     }
 
     public LocalDate getDate() {
         return date;
+    }
+
+    public LocalTime getTime() {
+        return time;
+    }
+
+    public void setTime(LocalTime time) {
+        this.time = time;
     }
 
     public void setDate(LocalDate date) {

@@ -19,13 +19,18 @@ public class NoteService {
     public void updateNote(User user, int index, String newText) {
         if (index >= 0 && index < user.getNotes().size()) {
             Note note = user.getNotes().get(index);
-            note.setText(newText);
+            if (!note.isTrainerRecommendation()) {
+                note.setText(newText);
+            }
         }
     }
 
     public void deleteNote(User user, int index) {
         if (index >= 0 && index < user.getNotes().size()) {
-            user.getNotes().remove(index);
+            Note note = user.getNotes().get(index);
+            if (!note.isTrainerRecommendation()) {
+                user.getNotes().remove(index);
+            }
         }
     }
 }
