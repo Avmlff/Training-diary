@@ -7,6 +7,7 @@ import com.trainingdiary.models.Note;
 import com.trainingdiary.services.AuthService;
 import com.trainingdiary.services.TrainingService;
 import com.trainingdiary.services.NoteService;
+import com.trainingdiary.services.TrainerService;
 import com.trainingdiary.services.AnalyticsService;
 
 import java.time.LocalDate;
@@ -17,8 +18,9 @@ public class Main {
     private static AuthService authService = new AuthService();
     private static TrainingService trainingService = new TrainingService();
     private static NoteService noteService = new NoteService();
-    private static Scanner scanner = new Scanner(System.in);
+    private static TrainerService trainerService = new TrainerService();
     private static AnalyticsService analyticsService = new AnalyticsService();
+    private static Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
         System.out.println("=== ДНЕВНИК ТРЕНИРОВОК ===");
@@ -38,7 +40,8 @@ public class Main {
     private static void showAuthMenu() {
         System.out.println("\n1. Регистрация");
         System.out.println("2. Вход");
-        System.out.println("3. Выход");
+        System.out.println("3. Запустить тесты");
+        System.out.println("4. Выход");
         System.out.print("Выберите действие: ");
 
         int choice = scanner.nextInt();
@@ -47,14 +50,22 @@ public class Main {
         switch (choice) {
             case 1 -> register();
             case 2 -> login();
-            case 3 -> System.exit(0);
+            case 3 -> runTests();
+            case 4 -> System.exit(0);
             default -> System.out.println("Неверный выбор!");
         }
     }
 
     private static void showMainMenu() {
+        User currentUser = authService.getCurrentUser();
+
         System.out.println("\n=== Главное меню ===");
-        System.out.println("Добро пожаловать, " + authService.getCurrentUser().getLogin());
+        System.out.println("Добро пожаловать, " + currentUser.getLogin());
+
+        if (currentUser.isTrainer()) {
+            System.out.println("(Вы вошли как тренер)");
+        }
+
         System.out.println("1. Мои тренировки");
         System.out.println("2. Добавить тренировку");
         System.out.println("3. Удалить тренировку");
@@ -71,7 +82,14 @@ public class Main {
         System.out.println("14. Статистика тренировок");
         System.out.println("15. Прогресс по весам");
         System.out.println("16. Прогресс по повторениям");
-        System.out.println("17. Выйти из аккаунта");
+
+        if (currentUser.isTrainer()) {
+            System.out.println("17. Панель тренера");
+            System.out.println("18. Выйти из аккаунта");
+        } else {
+            System.out.println("17. Выйти из аккаунта");
+        }
+
         System.out.print("Выберите действие: ");
 
         int choice = scanner.nextInt();
@@ -94,7 +112,20 @@ public class Main {
             case 14 -> showStatistics();
             case 15 -> showWeightProgress();
             case 16 -> showRepsProgress();
-            case 17 -> authService.logout();
+            case 17 -> {
+                if (currentUser.isTrainer()) {
+                    showTrainerMenu();
+                } else {
+                    authService.logout();
+                }
+            }
+            case 18 -> {
+                if (currentUser.isTrainer()) {
+                    authService.logout();
+                } else {
+                    System.out.println("Неверный выбор!");
+                }
+            }
             default -> System.out.println("Неверный выбор!");
         }
     }
@@ -105,10 +136,24 @@ public class Main {
         System.out.print("Введите пароль: ");
         String password = scanner.nextLine();
 
-        if (authService.register(login, password)) {
-            System.out.println("Регистрация успешна!");
+        System.out.print("У вас есть код тренера? (да/нет): ");
+        String hasCode = scanner.nextLine();
+
+        if (hasCode.equalsIgnoreCase("да")) {
+            System.out.print("Введите код тренера: ");
+            String trainerCode = scanner.nextLine();
+
+            if (authService.registerTrainer(login, password, trainerCode)) {
+                System.out.println("Тренер зарегистрирован!");
+            } else {
+                System.out.println("Неверный код тренера или логин занят!");
+            }
         } else {
-            System.out.println("Пользователь с таким логином уже существует!");
+            if (authService.register(login, password)) {
+                System.out.println("Регистрация успешна!");
+            } else {
+                System.out.println("Пользователь с таким логином уже существует!");
+            }
         }
     }
 
@@ -119,10 +164,115 @@ public class Main {
         String password = scanner.nextLine();
 
         if (authService.login(login, password)) {
+            User user = authService.getCurrentUser();
             System.out.println("Вход выполнен успешно!");
+            if (user.isTrainer()) {
+                System.out.println("Доступна панель тренера (пункт 17)");
+            }
         } else {
             System.out.println("Неверный логин или пароль!");
         }
+    }
+
+    private static void runTests() {
+        System.out.println("\nЗапуск тестов...");
+        TestRunner.main(new String[]{});
+        System.out.println("\nНажмите Enter для продолжения...");
+        scanner.nextLine();
+    }
+
+    private static void showTrainerMenu() {
+        System.out.println("\n=== ПАНЕЛЬ ТРЕНЕРА ===");
+        System.out.println("1. Просмотреть всех клиентов");
+        System.out.println("2. Просмотреть тренировки клиента");
+        System.out.println("3. Добавить рекомендацию клиенту");
+        System.out.println("4. Назад в главное меню");
+        System.out.print("Выберите действие: ");
+
+        int choice = scanner.nextInt();
+        scanner.nextLine();
+
+        switch (choice) {
+            case 1 -> showAllClients();
+            case 2 -> viewClientTrainings();
+            case 3 -> addClientRecommendation();
+            case 4 -> { /* вернуться в главное меню */ }
+            default -> System.out.println("Неверный выбор!");
+        }
+    }
+
+    private static void showAllClients() {
+        List<User> allUsers = authService.getAllUsers();
+        List<User> clients = trainerService.getAllClients(allUsers);
+
+        if (clients.isEmpty()) {
+            System.out.println("Нет зарегистрированных клиентов.");
+            return;
+        }
+
+        System.out.println("\n=== ВАШИ КЛИЕНТЫ ===");
+        for (int i = 0; i < clients.size(); i++) {
+            User client = clients.get(i);
+            System.out.println((i + 1) + ". " + client.getLogin() +
+                    " (тренировок: " + client.getTrainings().size() + ")");
+        }
+    }
+
+    private static void viewClientTrainings() {
+        System.out.print("Введите логин клиента: ");
+        String clientLogin = scanner.nextLine();
+
+        List<User> allUsers = authService.getAllUsers();
+        User client = trainerService.findUserByLogin(allUsers, clientLogin);
+
+        if (client == null) {
+            System.out.println("Клиент с логином '" + clientLogin + "' не найден.");
+            return;
+        }
+
+        if (client.isTrainer()) {
+            System.out.println("Это тренер, а не клиент!");
+            return;
+        }
+
+        List<Training> trainings = trainerService.viewUserTrainings(client);
+
+        if (trainings.isEmpty()) {
+            System.out.println("У клиента '" + clientLogin + "' нет тренировок.");
+            return;
+        }
+
+        System.out.println("\n=== ТРЕНИРОВКИ КЛИЕНТА " + clientLogin.toUpperCase() + " ===");
+        for (int i = 0; i < trainings.size(); i++) {
+            Training training = trainings.get(i);
+            System.out.println((i + 1) + ". " + training.getDate() + " - " + training.getType());
+            System.out.println("   Упражнений: " + training.getExercises().size());
+        }
+    }
+
+    private static void addClientRecommendation() {
+        System.out.print("Введите логин клиента: ");
+        String clientLogin = scanner.nextLine();
+
+        List<User> allUsers = authService.getAllUsers();
+        User client = trainerService.findUserByLogin(allUsers, clientLogin);
+
+        if (client == null) {
+            System.out.println("Клиент с логином '" + clientLogin + "' не найден.");
+            return;
+        }
+
+        if (client.isTrainer()) {
+            System.out.println("Это тренер, а не клиент!");
+            return;
+        }
+
+        System.out.print("Введите рекомендацию: ");
+        String recommendation = scanner.nextLine();
+
+        User trainer = authService.getCurrentUser();
+        trainerService.addRecommendation(trainer, client, recommendation);
+        System.out.println("Рекомендация для " + clientLogin + " добавлена!");
     }
 
     private static void showTrainings() {

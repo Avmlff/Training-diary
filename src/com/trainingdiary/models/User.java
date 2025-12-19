@@ -7,13 +7,15 @@ public class User {
     private String login;
     private String password;
     private List<Training> trainings;
-    private List<Note> notes; // ДОБАВИЛ
+    private List<Note> notes;
+    private String role;
 
     public User(String login, String password) {
         this.login = login;
         this.password = password;
         this.trainings = new ArrayList<>();
-        this.notes = new ArrayList<>(); // ДОБАВИЛ
+        this.notes = new ArrayList<>();
+        this.role = "USER";
     }
 
     public String getLogin() {
@@ -44,5 +46,17 @@ public class User {
 
     public void addNote(Note note) {
         notes.add(note);
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public boolean isTrainer() {
+        return "TRAINER".equals(role);
     }
 }
